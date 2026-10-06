@@ -131,17 +131,27 @@ def test_gemini_story_uses_existing_frame_when_present(tmp_path: Path) -> None:
 
     scenes = _inputs()[1]
     scenes = SceneAnalysisManifest(
-        **(
-            scenes.to_dict()
-            | {
-                "scenes": [
-                    scenes.scenes[0].to_dict() | {
-                        "representative_frame": "frames/scene_0001.jpg"
-                    },
-                    scenes.scenes[1].to_dict(),
-                ]
-            }
-        )
+        schema_version=scenes.schema_version,
+        episode_id=scenes.episode_id,
+        input_path=scenes.input_path,
+        input_sha256=scenes.input_sha256,
+        detection_method=scenes.detection_method,
+        threshold=scenes.threshold,
+        min_scene_duration_seconds=scenes.min_scene_duration_seconds,
+        detected_scenes=scenes.detected_scenes,
+        frames_extracted=1,
+        scenes=(
+            SceneRecord(
+                "scene_0001",
+                1,
+                0.0,
+                4.0,
+                4.0,
+                2.0,
+                "frames/scene_0001.jpg",
+            ),
+            scenes.scenes[1],
+        ),
     )
 
     client = _FakeClient(_payload())
