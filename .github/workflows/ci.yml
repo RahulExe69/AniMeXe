@@ -33,3 +33,5 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+# Full-pipeline validation branch: exercise the complete repository test suite.
