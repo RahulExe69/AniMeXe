@@ -135,7 +135,7 @@ def _optional_string(value: Any) -> str | None:
     if value is None:
         return None
     value = str(value).strip()
-    if not value or (value.startswith(") and value.endswith(")):
+    if not value or (value.startswith("${") and value.endswith("}")):
         return None
     return value
 
