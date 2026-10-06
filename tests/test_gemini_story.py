@@ -101,7 +101,8 @@ def test_gemini_story_analyzer_builds_valid_manifest() -> None:
     assert manifest.evidence.characters == ("Gon",)
     assert manifest.relationships
     assert manifest.ending_event_id == "event_0002"
-    assert manifest.confidence == 0.93\n    assert manifest.model == "gemini-3.8-flash"
+    assert manifest.confidence == 0.93
+    assert manifest.model == "gemini-3.8-flash"
 
     call = client.models.calls[0]
     assert call["model"] == "gemini-3.8-flash"
