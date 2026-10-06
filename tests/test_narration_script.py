@@ -76,7 +76,7 @@ def _transcript() -> TranscriptAnalysisManifest:
 
 
 def _payload() -> dict:
-    body_words = [f"word{i}" for i in range(280)]
+    body_words = [f"word{i}" for i in range(255)]
     chunks = [body_words[:94], body_words[94:187], body_words[187:]]
     texts = [
         "The episode begins by showing why Gon matters to this journey. " + " ".join(chunks[0]),
