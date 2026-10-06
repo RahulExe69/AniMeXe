@@ -259,5 +259,6 @@ def _clean_srt_text(value: str) -> str:
     return " ".join(value.replace("\n", " ").split())
 
 
-def _escape_filter_path(value: str) -> str:
-    return value.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+def _escape_filter_path(value: str | Path) -> str:
+    text = str(value)
+    return text.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
