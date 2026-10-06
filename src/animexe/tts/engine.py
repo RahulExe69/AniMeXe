@@ -5,6 +5,7 @@ import math
 import re
 import shutil
 import subprocess
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -127,7 +128,6 @@ class SyntheticTTSSynthesizer:
         output_dir: Path,
         source_script: str = "script.json",
     ) -> TTSManifest:
-        _require_media_tools()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         items: list[tuple[str, str, tuple[str, ...]]] = [
@@ -310,10 +310,20 @@ class CommandTTSSynthesizer:
 
 def _require_media_tools() -> None:
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
-        raise TTSError("ffmpeg and ffprobe are required for TTS audio generation")
+        raise TTSError("ffmpeg and ffprobe are required for command TTS")
 
 
 def _probe_audio(path: Path) -> tuple[float, int, int]:
+    try:
+        with wave.open(str(path), "rb") as wav:
+            channels = wav.getnchannels()
+            sample_rate = wav.getframerate()
+            frames = wav.getnframes()
+            duration = frames / float(sample_rate)
+            if duration > 0 and sample_rate > 0 and channels > 0:
+                return duration, sample_rate, channels
+    except (OSError, wave.Error):
+        pass
     command = [
         "ffprobe",
         "-v",
