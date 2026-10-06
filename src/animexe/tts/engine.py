@@ -177,35 +177,23 @@ class SyntheticTTSSynthesizer:
         return words / self.words_per_minute * 60.0
 
     def _render_tone(self, path: Path, duration: float) -> None:
-        command = [
-            "ffmpeg",
-            "-v",
-            "error",
-            "-f",
-            "lavfi",
-            "-i",
-            f"sine=frequency=440:duration={duration}",
-            "-ac",
-            "1",
-            "-ar",
-            str(self.sample_rate),
-            "-c:a",
-            "pcm_s16le",
-            "-y",
-            str(path),
-        ]
-        completed = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=max(20, math.ceil(duration) + 10),
-            check=False,
-        )
-        if completed.returncode != 0:
-            raise TTSError(
-                f"synthetic TTS ffmpeg failed: "
-                f"{completed.stderr.strip() or 'unknown error'}"
-            )
+        frame_count = max(1, int(round(duration * self.sample_rate)))
+        amplitude = 5000
+        frequency = 440
+        period = max(1, int(self.sample_rate / frequency))
+        frames = bytearray()
+        for index in range(frame_count):
+            phase = index % period
+            sample = amplitude if phase < period // 2 else -amplitude
+            frames.extend(int(sample).to_bytes(2, byteorder="little", signed=True))
+        try:
+            with wave.open(str(path), "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(self.sample_rate)
+                wav.writeframes(bytes(frames))
+        except (OSError, wave.Error) as exc:
+            raise TTSError(f"synthetic TTS could not write WAV: {exc}") from exc
 
 
 class CommandTTSSynthesizer:
