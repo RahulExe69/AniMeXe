@@ -48,4 +48,4 @@ def test_rejects_encrypted_hls() -> None:
 
 def test_rejects_hls_master_playlist() -> None:
     with pytest.raises(MediaDownloadError, match="master playlists"):
-        _reject_protected_hls("\\n".join(["#EXTM3U", "#EXT-X-STREAM-INF:BANDWIDTH=1000", "variant.m3u8"]))
+        _reject_protected_hls(chr(10).join(["#EXTM3U", "#EXT-X-STREAM-INF:BANDWIDTH=1000", "variant.m3u8"]))
