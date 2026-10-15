@@ -44,3 +44,8 @@ def test_allows_clear_hls_manifest() -> None:
 def test_rejects_encrypted_hls() -> None:
     with pytest.raises(MediaDownloadError, match="encrypted HLS"):
         _reject_protected_hls('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin"\n')
+
+
+def test_rejects_hls_master_playlist() -> None:
+    with pytest.raises(MediaDownloadError, match="master playlists"):
+        _reject_protected_hls("#EXTM3U\\n#EXT-X-STREAM-INF:BANDWIDTH=1000\\nvariant.m3u8\\n")
