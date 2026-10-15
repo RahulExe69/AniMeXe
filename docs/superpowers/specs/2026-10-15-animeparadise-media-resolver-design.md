@@ -70,7 +70,7 @@ Add a provider-specific AnimeParadise resolver to AniMeXe that maps a requested 
 ## Security and media handling
 
 - Only use documented, accessible API interfaces and direct media URLs that the caller is entitled to process.
-- URL validation must run on the initial URL, redirects observed by the HTTP client, and nested playlist URIs that are inspected. Do not claim DNS-rebinding-proof SSRF protection without a transport design that enforces it.
+- URL validation must run on the initial URL, redirects observed by the HTTP client, and nested playlist URIs that are inspected. Reject non-global literal IPs and localhost names; resolve hostnames and reject them when all resolved addresses are not public. Document that preflight DNS checks alone cannot completely prevent DNS rebinding or protect FFmpeg from every malicious redirect; never describe this as complete SSRF protection.
 - Do not give FFmpeg arbitrary hidden browser state, cookies, or credentials. Pass only the minimal, explicitly configured non-secret headers needed by the provider's documented media path.
 - For HLS, inspect nested variant and referenced media playlists where identifiable. Refuse any `EXT-X-KEY` or `EXT-X-SESSION-KEY` declaration unless it explicitly and unambiguously specifies `METHOD=NONE`; the first phase must not support encrypted segments.
 - Configure FFmpeg's output-size limit and timeout and check the final size; use a temporary sibling file and atomic replacement. Never put episode binaries into the repository.
