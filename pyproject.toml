@@ -21,7 +21,7 @@ test = [
 ]
 
 [project.scripts]
-animexe = "animexe.cli:main"
+animexe = "animexe.cli:main"\nanimexe-media-download = "animexe.media_download:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
