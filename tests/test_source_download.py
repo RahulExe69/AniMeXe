@@ -67,7 +67,7 @@ segment.ts
         "animexe.media.source_download.requests.get",
         lambda url, **kwargs: FakeResponse(url=url, content=playlist),
     )
-    with pytest.raises(SourceDownloadError, match="Encrypted HLS is unsupported"):
+    with pytest.raises(SourceDownloadError, match="Encrypted or ambiguous HLS key"):
         download_media_source(
             "https://cdn.example/episode.m3u8",
             "/tmp/episode.mkv",
