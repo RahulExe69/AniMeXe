@@ -24,6 +24,7 @@ from .config import load_config
 from .editing import EditPlanError, EditPlanManifest, EditPlanner
 from .logging import configure_logging
 from .metadata import MetadataLibrary, MetadataService
+from .media.source_download import SEVENX_PROVIDER_MODES, SourceDownloadError, download_media_source
 from .models import AnimeRecord, EpisodeRecord
 from .narration import (
     GeminiNarrationScriptGenerator,
@@ -90,6 +91,28 @@ def _build_parser() -> argparse.ArgumentParser:
     episode_sub = episode.add_subparsers(dest="episode_command", required=True)
     episode_list = episode_sub.add_parser("list", help="list episodes")
     episode_list.add_argument("--anime-id")
+
+    episode_download = episode_sub.add_parser(
+        "download-source",
+        help="save a permitted direct video file or unencrypted HLS stream for episode analysis",
+    )
+    episode_download.add_argument("media_url", help="direct MP4/MKV/WebM or unencrypted HLS playlist URL (not an embed page)")
+    episode_download.add_argument("--output", type=Path, default=None, help="local episode output path")
+    episode_download.add_argument(
+        "--source-provider",
+        choices=tuple(SEVENX_PROVIDER_MODES),
+        default=None,
+        help="optional 7xAnime provider label; embed-only URLs remain unsupported",
+    )
+    episode_download.add_argument("--referer", default=None, help="Referer header when legitimately required by the media host")
+    episode_download.add_argument("--user-agent", default=None, help="optional User-Agent header")
+    episode_download.add_argument("--timeout", type=int, default=60, help="request timeout in seconds (default: 60)")
+    episode_download.add_argument("--max-size-mb", type=int, default=8192, help="maximum saved media size in MiB (default: 8192)")
+    episode_download.add_argument(
+        "--authorized-use",
+        action="store_true",
+        help="confirm you have permission to download and process this media",
+    )
 
     episode_inspect = episode_sub.add_parser(
         "inspect",
@@ -358,6 +381,29 @@ def main() -> None:
             return
 
     if args.command == "episode":
+        if args.episode_command == "download-source":
+            if not args.authorized_use:
+                parser.error("Confirm you have permission to download and process this media by passing --authorized-use.")
+            headers = {}
+            if args.referer:
+                headers["Referer"] = args.referer
+            if args.user_agent:
+                headers["User-Agent"] = args.user_agent
+            output_path = args.output or (paths.workspace / "input" / "source-episode.mkv")
+            try:
+                result = download_media_source(
+                    args.media_url,
+                    output_path,
+                    source_provider=args.source_provider,
+                    headers=headers,
+                    timeout_seconds=args.timeout,
+                    max_bytes=args.max_size_mb * 1024 * 1024,
+                )
+            except (SourceDownloadError, ValueError) as exc:
+                parser.error(str(exc))
+            _print_json(result)
+            return
+
         if args.episode_command == "list":
             _print_json(
                 [item.__dict__ for item in store.list_episodes(args.anime_id)]
