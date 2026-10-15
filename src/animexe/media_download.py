@@ -51,6 +51,8 @@ def _looks_like_hls(url: str, content_type: str = "") -> bool:
 
 def _reject_protected_hls(manifest: str) -> None:
     # Only clear HLS is supported. Do not attempt to retrieve keys or decrypt media.
+    if any(line.strip().upper().startswith("#EXT-X-STREAM-INF:") for line in manifest.splitlines()):
+        raise MediaDownloadError("HLS master playlists are not accepted; supply a verified clear media playlist")
     for line in manifest.splitlines():
         line = line.strip()
         if line.upper().startswith("#EXT-X-KEY:"):
@@ -149,6 +151,8 @@ def download_media(
                     )
         if not temporary.is_file() or temporary.stat().st_size == 0:
             raise MediaDownloadError("media acquisition produced no output")
+        if temporary.stat().st_size > max_bytes:
+            raise MediaDownloadError(f"media exceeds configured limit ({max_bytes} bytes)")
         temporary.replace(output)
         return {
             "status": "downloaded",
