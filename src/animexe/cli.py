@@ -460,6 +460,7 @@ def main() -> None:
                 ValueError,
                 TypeError,
                 KeyError,
+                RuntimeError,
             ) as exc:
                 parser.error(str(exc))
             _print_json(result)
