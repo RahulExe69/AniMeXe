@@ -32,7 +32,7 @@ class FakeSession:
         self.calls.append((url, kwargs))
         parsed = urlsplit(url)
         route = (parsed.path, kwargs.get("params") or {})
-        for (path, expected_params), response in self.routes.items():
+        for path, expected_params, response in self.routes:
             if path == parsed.path and all(route[1].get(k) == v for k, v in expected_params.items()):
                 return response
         raise AssertionError(f"Unexpected API request: {parsed.path} params={route[1]}")
@@ -66,23 +66,23 @@ def _episode_response(stream_link="opaque-token"):
 
 
 def test_resolves_selected_episode_to_normalized_hls_source():
-    session = FakeSession({
-        ("/search", {"q": "Exact Anime", "limit": 20}): _search_result({
+    session = FakeSession([
+        ("/search", {"q": "Exact Anime", "limit": 20}, _search_result({
             "_id": "series-1",
             "title": "Exact Anime",
             "alternativeTitle": {"english": "Exact Anime", "native": "Exact Anime Native"},
-        }),
-        ("/search", {"q": "Exact Anime Native", "limit": 20}): _search_result({
+        })),
+        ("/search", {"q": "Exact Anime Native", "limit": 20}, _search_result({
             "_id": "series-1",
             "title": "Exact Anime",
             "alternativeTitle": {"english": "Exact Anime", "native": "Exact Anime Native"},
-        }),
-        ("/anime/series-1/episode", {}): _catalogue(
+        })),
+        ("/anime/series-1/episode", {}, _catalogue(
             {"uid": "episode-1", "number": 1},
             {"uid": "episode-2", "number": 2},
-        ),
-        ("/ep/episode-2", {"origin": "series-1"}): _episode_response(),
-    })
+        )),
+        ("/ep/episode-2", {"origin": "series-1"}, _episode_response()),
+    ])
     provider = AnimeParadiseProvider(session=session)
 
     source = provider.resolve_anilist_episode(_metadata(), 2)
@@ -101,10 +101,10 @@ def test_refuses_ambiguous_title_matches_before_catalogue_lookup():
         {"_id": "series-1", "title": "Exact Anime"},
         {"_id": "series-2", "title": "Exact Anime"},
     )
-    session = FakeSession({
-        ("/search", {"q": "Exact Anime", "limit": 20}): duplicate_response,
-        ("/search", {"q": "Exact Anime Native", "limit": 20}): duplicate_response,
-    })
+    session = FakeSession([
+        ("/search", {"q": "Exact Anime", "limit": 20}, duplicate_response),
+        ("/search", {"q": "Exact Anime Native", "limit": 20}, duplicate_response),
+    ])
     provider = AnimeParadiseProvider(session=session)
 
     with pytest.raises(AnimeParadiseError, match="ambiguous"):
@@ -114,15 +114,15 @@ def test_refuses_ambiguous_title_matches_before_catalogue_lookup():
 
 
 def test_missing_episode_stops_before_stream_endpoint():
-    session = FakeSession({
-        ("/search", {"q": "Exact Anime", "limit": 20}): _search_result({
+    session = FakeSession([
+        ("/search", {"q": "Exact Anime", "limit": 20}, _search_result({
             "_id": "series-1", "title": "Exact Anime"
-        }),
-        ("/search", {"q": "Exact Anime Native", "limit": 20}): _search_result({
+        })),
+        ("/search", {"q": "Exact Anime Native", "limit": 20}, _search_result({
             "_id": "series-1", "title": "Exact Anime"
-        }),
-        ("/anime/series-1/episode", {}): _catalogue({"uid": "episode-1", "number": 1}),
-    })
+        })),
+        ("/anime/series-1/episode", {}, _catalogue({"uid": "episode-1", "number": 1})),
+    ])
     provider = AnimeParadiseProvider(session=session)
 
     with pytest.raises(AnimeParadiseError, match="does not list episode 2"):
@@ -132,16 +132,16 @@ def test_missing_episode_stops_before_stream_endpoint():
 
 
 def test_missing_stream_link_is_a_resolution_error():
-    session = FakeSession({
-        ("/search", {"q": "Exact Anime", "limit": 20}): _search_result({
+    session = FakeSession([
+        ("/search", {"q": "Exact Anime", "limit": 20}, _search_result({
             "_id": "series-1", "title": "Exact Anime"
-        }),
-        ("/search", {"q": "Exact Anime Native", "limit": 20}): _search_result({
+        })),
+        ("/search", {"q": "Exact Anime Native", "limit": 20}, _search_result({
             "_id": "series-1", "title": "Exact Anime"
-        }),
-        ("/anime/series-1/episode", {}): _catalogue({"uid": "episode-1", "number": 1}),
-        ("/ep/episode-1", {"origin": "series-1"}): _episode_response(stream_link=None),
-    })
+        })),
+        ("/anime/series-1/episode", {}, _catalogue({"uid": "episode-1", "number": 1})),
+        ("/ep/episode-1", {"origin": "series-1"}, _episode_response(stream_link=None)),
+    ])
     provider = AnimeParadiseProvider(session=session)
 
     with pytest.raises(AnimeParadiseError, match="did not return a streamLink"):
