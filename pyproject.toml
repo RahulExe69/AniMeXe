@@ -29,3 +29,6 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "live: real external-provider integration test (requires network and ffmpeg)",
+]

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ..config import AppConfig
 from .anivault import AnivaultProvider
+from .animeparadise import AnimeParadiseProvider
 from .anivexa import AnivexaProvider
 from .kuhi import KuhiProvider
 from .local import LocalProvider
@@ -17,10 +18,12 @@ def build_registry(config: AppConfig, project_root: Path) -> ProviderRegistry:
 
     configured = [config.provider, *config.provider_fallbacks]
     for provider_config in configured:
-        if not provider_config.api_base_url:
-            continue
         name = provider_config.name.strip().lower()
-        if name == "kuhi":
+        if name == "animeparadise":
+            provider = AnimeParadiseProvider(api_base_url=provider_config.api_base_url)
+        elif not provider_config.api_base_url:
+            continue
+        elif name == "kuhi":
             provider = KuhiProvider(provider_config.api_base_url)
         elif name == "anivexa":
             provider = AnivexaProvider(provider_config.api_base_url)

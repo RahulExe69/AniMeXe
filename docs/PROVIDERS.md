@@ -817,3 +817,30 @@ AniMeXe rejects:
 The source's audio is retained in the downloaded file so analysis can still inspect the original media tracks. The existing visual-cut/final-render stages are responsible for producing an explanation video without the episode's original audio; Sub/Dub selection is not required by this saving step.
 
 Only download and process media you have permission to use. The downloader does not bypass DRM, extract hidden player URLs, or defeat provider access controls. A direct URL can still expire or fail, and an HLS URL passing playlist checks is not proof that every segment will be available.
+
+
+## Experimental direct-media acquisition: AnimeParadise
+
+AnimeParadise is the first native-media adapter in AniMeXe. It is opt-in and independent of Kuhi; it uses the site's JSON catalogue flow rather than treating an embed/player URL as media:
+
+1. Search the public JSON catalogue using AniList title variants.
+2. Require a confident, unambiguous series match.
+3. Select the requested integer episode from that series catalogue.
+4. Resolve the selected episode UID through the documented episode endpoint and convert its `streamLink` to the AnimeParadise HLS URL.
+5. Pass that URL and its minimal Referer header to the shared media saver, which rejects encrypted/ambiguous HLS and applies acquisition time and size limits.
+
+The adapter currently exposes **subbed episodes only**. AniMeXe's explanation renderer continues to mute original episode audio. This does not imply that a requested provider episode is available: only a successful, permitted acquisition followed by media inspection establishes that.
+
+Example:
+
+```bash
+animexe episode acquire-animeparadise \
+  --anilist-id 21 \
+  --episode-number 1 \
+  --authorized-use \
+  --output workspace/input/episode-1.mkv
+```
+
+Add `--run-pipeline` to pass the acquired local file to the existing explanation pipeline. The command requires `--authorized-use` and does not print the expiring stream URL in its JSON result. Provider configuration is optional for direct acquisition; set `provider.name: animeparadise` if it should also appear in the configured provider registry/status report.
+
+**Verification status:** resolver behaviour is covered by mocked API contract tests. A successful test run does not prove present-day provider uptime or prove a real episode plays end-to-end; keep the adapter manual/opt-in until a permitted sample is checked with `ffprobe` and a decoded frame.
