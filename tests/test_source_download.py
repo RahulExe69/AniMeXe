@@ -91,7 +91,10 @@ segment.ts
     )
     monkeypatch.setattr("animexe.media.source_download.shutil.which", lambda _: "/usr/bin/ffmpeg")
 
+    captured = {}
+
     def fake_run(command, **kwargs):
+        captured["command"] = command
         Path(command[-1]).write_bytes(b"fake-matroska")
         return SimpleNamespace(returncode=0, stderr="")
 
@@ -104,6 +107,7 @@ segment.ts
         headers={"Referer": "https://animeparadise.moe/"},
     )
     assert output.read_bytes() == b"fake-matroska"
+    assert captured["command"][captured["command"].index("-fs") + 1] == str(8 * 1024**3)
     assert result["source_kind"] == "hls"
     assert result["source_audio_preserved_for_analysis"] is True
 
