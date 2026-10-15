@@ -774,3 +774,46 @@ When provider research changes:
 - do not rely on chat history alone.
 
 The purpose of this document is to let future implementation sessions start from the latest verified provider architecture instead of re-discovering old assumptions.
+
+---
+
+## 16. Saving a source from 7xAnime
+
+AniMeXe can now save a **direct video URL** or a **clearly unencrypted HLS playlist** to a local workspace file before analysis. It does not treat an iframe URL as a media file.
+
+The 7xAnime provider map currently divides into:
+
+| 7xAnime provider | Current route type | AniMeXe behavior |
+|---|---|---|
+| AniXo | Embed | Requires a direct media URL; the iframe is rejected |
+| Megavid | Embed | Requires a direct media URL; the iframe is rejected |
+| AnimeParadise | HLS candidate | A direct `stream.animeparadise.moe/m3u8` playlist can be checked and remuxed when it is accessible and unencrypted; actual playback/source availability is not guaranteed |
+| MegaFlix | Embed | Requires a direct media URL; the iframe is rejected |
+| TryEmbed | Embed | Requires a direct media URL; the iframe is rejected |
+| CinexStream | Embed | Requires a direct media URL; the iframe is rejected |
+| NontonGo | Embed | Requires a direct media URL; the iframe is rejected |
+
+This is a **source-saving hand-off**, not an iframe scraper or automatic provider resolver. Provider labels are metadata only: for example, `--source-provider anixo` does not make an AniXo iframe downloadable, and it does not scrape the iframe's internal requests. If the provider only supplies an embedded player page, select another source that explicitly exposes a direct, permitted media URL.
+
+### CLI
+
+```bash
+python -m animexe episode download-source \
+  "https://media.example/episode.m3u8" \
+  --source-provider animeparadise \
+  --referer "https://animeparadise.moe/" \
+  --output workspace/input/source-episode.mkv \
+  --authorized-use
+```
+
+For a direct MP4/MKV/WebM URL, the same command streams the file to disk. HLS uses FFmpeg to remux the stream locally. Requests have a timeout and configurable maximum file size; temporary files are replaced atomically after success.
+
+AniMeXe rejects:
+- iframe/catalog/player pages that are not direct media;
+- DASH manifests;
+- HLS playlists declaring encryption or with ambiguous key signaling;
+- non-HTTP(S) URLs and literal localhost/private IP addresses.
+
+The source's audio is retained in the downloaded file so analysis can still inspect the original media tracks. The existing visual-cut/final-render stages are responsible for producing an explanation video without the episode's original audio; Sub/Dub selection is not required by this saving step.
+
+Only download and process media you have permission to use. The downloader does not bypass DRM, extract hidden player URLs, or defeat provider access controls. A direct URL can still expire or fail, and an HLS URL passing playlist checks is not proof that every segment will be available.

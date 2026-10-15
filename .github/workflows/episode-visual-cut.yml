@@ -18,9 +18,23 @@ on:
         required: true
         default: "workspace/input/episode.mkv"
       media_url:
-        description: "Authorized/direct media URL (direct_url mode only)"
+        description: "Authorized/direct media URL (direct_url mode only; must be a media file or unencrypted HLS playlist)"
         required: false
         default: ""
+      source_provider:
+        description: "Optional 7xAnime source label; embed player URLs are not downloadable"
+        required: true
+        type: choice
+        options:
+          - none
+          - anixo
+          - megavid
+          - animeparadise
+          - megaflix
+          - tryembed
+          - cinexstream
+          - nontongo
+        default: none
       target_duration_seconds:
         description: "Target duration for the visual explanation cut"
         required: true
@@ -92,25 +106,36 @@ jobs:
           PY
 
       - name: Prepare episode input
+        env:
+          INPUT_MODE: ${{ inputs.input_mode }}
+          INPUT_PATH: ${{ inputs.input_path }}
+          MEDIA_URL: ${{ inputs.media_url }}
+          SOURCE_PROVIDER: ${{ inputs.source_provider }}
         run: |
           set -euo pipefail
           mkdir -p workspace/input workspace/e2e
 
-          if [ "${{ inputs.input_mode }}" = "workspace" ]; then
-            test -s "${{ inputs.input_path }}" || {
-              echo "::error::Episode file not found at '${{ inputs.input_path }}'."
+          if [ "$INPUT_MODE" = "workspace" ]; then
+            test -s "$INPUT_PATH" || {
+              echo "::error::Episode file not found at '$INPUT_PATH'."
               exit 1
             }
-            cp "${{ inputs.input_path }}" workspace/e2e/source-episode.mkv
+            cp "$INPUT_PATH" workspace/e2e/source-episode.mkv
             echo "EPISODE=workspace/e2e/source-episode.mkv" >> "$GITHUB_ENV"
             exit 0
           fi
 
-          if [ "${{ inputs.input_mode }}" = "direct_url" ]; then
-            test -n "${{ inputs.media_url }}" || { echo "::error::media_url is required."; exit 1; }
-            curl --fail --location --retry 4 --retry-delay 3 --retry-all-errors \
-              --user-agent "AniMeXe/0.1" "${{ inputs.media_url }}" \
+          if [ "$INPUT_MODE" = "direct_url" ]; then
+            test -n "$MEDIA_URL" || { echo "::error::media_url is required."; exit 1; }
+            DOWNLOAD_ARGS=(
+              episode download-source "$MEDIA_URL"
               --output workspace/e2e/source-episode.mkv
+              --authorized-use
+            )
+            if [ "$SOURCE_PROVIDER" != "none" ]; then
+              DOWNLOAD_ARGS+=(--source-provider "$SOURCE_PROVIDER")
+            fi
+            python -m animexe "${DOWNLOAD_ARGS[@]}"
             test -s workspace/e2e/source-episode.mkv
             echo "EPISODE=workspace/e2e/source-episode.mkv" >> "$GITHUB_ENV"
             exit 0
