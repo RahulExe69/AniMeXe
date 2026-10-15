@@ -279,7 +279,10 @@ def download_media_source(
         ])
         if muxer == "mp4":
             command.extend(["-movflags", "+faststart"])
-        command.extend(["-f", muxer, str(tmp)])
+        # FFmpeg's output-size guard limits the run itself; the post-run
+        # stat check below remains necessary because muxer/container overhead
+        # can make the final output exceed the requested cap slightly.
+        command.extend(["-fs", str(max_bytes), "-f", muxer, str(tmp)])
         try:
             completed = subprocess.run(
                 command, capture_output=True, text=True, timeout=timeout_seconds * 30
