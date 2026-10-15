@@ -31,16 +31,16 @@ SEVENX_PROVIDER_MODES: dict[str, str] = {
     "nontongo": "embed-only",
 }
 
-_EMBED_HOSTS = {
-    "anixo.buzz",
-    "megavid.buzz",
-    "megaflix.buzz",
-    "www.megaflix.buzz",
-    "tryembed.us.cc",
-    "cinextream.cc",
-    "nontongo.win",
-    "animeparadise.moe",
-    "www.animeparadise.moe",
+_EMBED_HOST_PROVIDER = {
+    "anixo.buzz": "anixo",
+    "megavid.buzz": "megavid",
+    "megaflix.buzz": "megaflix",
+    "www.megaflix.buzz": "megaflix",
+    "tryembed.us.cc": "tryembed",
+    "cinextream.cc": "cinexstream",
+    "nontongo.win": "nontongo",
+    "animeparadise.moe": "animeparadise",
+    "www.animeparadise.moe": "animeparadise",
 }
 _VIDEO_SUFFIXES = {".mp4", ".mkv", ".webm", ".mov", ".m4v", ".avi"}
 _HLS_CONTENT_TYPES = {
@@ -83,19 +83,8 @@ def _provider_embed_error(url: str) -> str | None:
         path == "/m3u8" or path.endswith(".m3u8")
     ):
         return None
-    if host in _EMBED_HOSTS:
-        provider = next(
-            (name for name in SEVENX_PROVIDER_MODES if host == name or host in {
-                "anixo.buzz" if name == "anixo" else "",
-                "megavid.buzz" if name == "megavid" else "",
-                "www.megaflix.buzz" if name == "megaflix" else "",
-                "tryembed.us.cc" if name == "tryembed" else "",
-                "cinextream.cc" if name == "cinexstream" else "",
-                "nontongo.win" if name == "nontongo" else "",
-                "animeparadise.moe" if name == "animeparadise" else "",
-            }),
-            "selected provider",
-        )
+    if host in _EMBED_HOST_PROVIDER:
+        provider = _EMBED_HOST_PROVIDER[host]
         return (
             f"{provider} URL is an embedded player/catalog page, not a direct media file. "
             "AniMeXe will not scrape the iframe to extract a hidden stream. Supply a direct, "
