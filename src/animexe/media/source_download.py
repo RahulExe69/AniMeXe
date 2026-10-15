@@ -257,10 +257,12 @@ def download_media_source(
     if kind == "hls":
         if target.suffix.lower() not in {".mkv", ".mp4"}:
             raise SourceDownloadError("HLS output must use .mkv or .mp4.")
+        # Validate the playlist before checking local tooling so encrypted
+        # streams fail closed even on machines without FFmpeg installed.
+        _check_unencrypted_hls(url, request_headers, timeout_seconds)
         ffmpeg = shutil.which("ffmpeg")
         if not ffmpeg:
             raise SourceDownloadError("FFmpeg is required to save HLS sources.")
-        _check_unencrypted_hls(url, request_headers, timeout_seconds)
         muxer = "matroska" if target.suffix.lower() == ".mkv" else "mp4"
         tmp = _temp_path(target, target.suffix)
         tmp.unlink(missing_ok=True)
