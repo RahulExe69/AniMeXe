@@ -13,7 +13,6 @@ import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 import requests
 
