@@ -175,9 +175,9 @@ def _check_unencrypted_hls(
         match = _KEY_TAG.match(line.strip())
         if match:
             method = re.search(r"(?:^|,)\s*METHOD=([^,\s]+)", match.group(1), re.IGNORECASE)
-            if method and method.group(1).strip('"').upper() != "NONE":
+            if not method or method.group(1).strip('"').upper() != "NONE":
                 raise SourceDownloadError(
-                    "Encrypted HLS is unsupported. AniMeXe only saves unencrypted streams."
+                    "Encrypted or ambiguous HLS key signaling is unsupported. AniMeXe only saves clearly unencrypted streams."
                 )
 
     lines = [line.strip() for line in text.splitlines()]
